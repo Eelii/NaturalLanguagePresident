@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+ <head>
+   <meta charset="UTF-8">
+   <title>{{title}}</title>
+
+   <style>
+
+     .navbar{
+       outline: none;
+       /*position: absolute;*/
+       width:700px;
+       display:block;
+       left: 0;
+       background-image: url({{ url_for('static', filename = 'flag.jpg') }});
+       height: 100px;
+      }
+
+     .navbackground{ 
+       position: relative;
+       display:inline-block;
+       width: 25%;
+     }
+
+     .navlink{
+      display: inline;
+      z-index: +2;
+     }
+
+     .tweet_list{
+      display: flex;
+      flex-direction: column-reverse;  
+      margin-left: 290px;
+      margin-right: 40px;
+     }
+
+     .tweet{
+      list-style-image: url('/static/trump_profile3.png');
+      margin-top: 50px;
+     }
+
+     .tweet_generator{
+       position: absolute;
+       top: 25%;
+       margin-left: 30px;
+
+     }
+
+     .radio_btn{
+       background-color:rebeccapurple;
+       color:red;
+     }
+
+     .user_inf{
+       position: absolute;
+       right:150px;
+       top:20px;
+       float: right;
+     }
+
+
+
+   </style>
+ </head>
+ 
+ <body>
+      <div class=navbar>
+        <!--<img class=navbackground src= {{ url_for('static', filename = 'flag.jpg') }} alt="Trump shrugging" border="0">-->
+        <ul class=navbar-content>
+          
+        </ul> 
+      </div>
+      <div class=user_inf>
+        {% if currentUser() %}
+          <p><b>Logged in as: </b>{{ currentUser().username }}</p>
+          <a href='/logout'>Log out</a>
+        {% endif %}
+      </div>
+
+   {% block content %}{% endblock %}
+
+   <footer>
+
+
+   </footer>
+ </body>
+ 
+</html> 

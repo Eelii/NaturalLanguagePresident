@@ -1,0 +1,41 @@
+{% extends 'parentPage.html' %}
+
+{% block content %}
+<ul class=tweet_list>
+    {% for tweet in tweets %}
+        <div class=votes>
+            <a href='/upvote/{{tweet.id}}'>UPVOTE</a>
+            <a href='/downvote/{{tweet.id}}'>DOWNVOTE</a>
+        </div>
+        <p>{{tweet.dateTime}}</p>
+        <b>Rating: {{tweet.totalRating}}</b>
+        <p>-----------------------------------------</p>
+        <li class=tweet>{{tweet.text}}</li>
+    {% endfor %}
+    <h3>Tweets:</h3>
+</ul>
+
+<div class=tweet_generator>
+ <form method=POST>
+    {% for field in form %}
+    <p>
+    {% if not field.flags.hidden %}
+        <b>{{ field.label }}</b>
+    {% endif %} 
+    <div class=radioBtn>
+    {% if field.label == 'Sanity Level' %}
+            {{ field }}
+        </div>
+    {% else %}
+        {{ field }}
+
+    {% endif %}
+    </p>
+    {% endfor %}
+    <input type=submit value='Generate a tweet!'>
+ </form>
+</div>
+    {% if form.errors %}
+    {{ form.errors }}
+    {% endif %}
+{% endblock content %}

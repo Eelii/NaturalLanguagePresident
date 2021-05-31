@@ -1,0 +1,28 @@
+{% extends "parentPage.html" %}
+
+
+
+
+{% block content %}
+
+{% block flashMessage %}
+    {% for message in get_flashed_messages() %}
+        <p>{{ message }}</p>
+    {% endfor %}
+{% endblock %}
+
+<form method=POST>
+    {% for field in form %}
+        <p>
+            {% if not field.flags.hidden %}
+                {{ field.label }}<br> 
+            {% endif %}
+            
+            {{ field }}
+        </p>
+    {% endfor %}
+        <input type=submit>
+</form>
+
+<a href='/register'>REGISTER</a>
+{% endblock %}
