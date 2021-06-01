@@ -1,26 +1,29 @@
 {% extends 'parentPage.html' %}
 
 {% block content %}
+<b style="position:relative; margin-left: 200px; top: 50px;">Tweets:</b>
 <ul class=tweet_list>
     {% for tweet in tweets %}
         <div class=votes>
             <a href='/upvote/{{tweet.id}}'>UPVOTE</a>
             <a href='/downvote/{{tweet.id}}'>DOWNVOTE</a>
+            {% if currentUser().username == 'admin' %}
+                <a href='/delete/{{tweet.id}}'>DELETE</a>
+            {% endif %}
         </div>
         <p>{{tweet.dateTime}}</p>
         <b>Rating: {{tweet.totalRating}}</b>
         <p>-----------------------------------------</p>
         <li class=tweet>{{tweet.text}}</li>
     {% endfor %}
-    <h3>Tweets:</h3>
 </ul>
+
 
 <div class=tweet_generator>
  <form method=POST>
     {% for field in form %}
-    <p>
     {% if not field.flags.hidden %}
-        <b>{{ field.label }}</b>
+        <p>{{ field.label }}</p>
     {% endif %} 
     <div class=radioBtn>
     {% if field.label == 'Sanity Level' %}
@@ -30,7 +33,6 @@
         {{ field }}
 
     {% endif %}
-    </p>
     {% endfor %}
     <input type=submit value='Generate a tweet!'>
  </form>

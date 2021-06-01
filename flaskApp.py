@@ -18,11 +18,8 @@ import datetime
 ai = nlp.init_ai()
 
 app = Flask(__name__)
-#TODO
 app.secret_key = 'fdsAf.ADfeqqvb.oirKIOGdafa'
 db = SQLAlchemy(app)
-
-#app.jinja_env.globals["currentUser"] = currentUser????????????????
 
 
 class User(db.Model):
@@ -37,10 +34,15 @@ class User(db.Model):
     def checkPassword(self, password):
         return check_password_hash(self.passwordHash, password)
 
-class UserForm(FlaskForm):
+class LoginForm(FlaskForm):
     username = StringField('username', validators=[validators.InputRequired()])
-    email = StringField('email', validators=[validators.Email()])
     password = PasswordField('password', validators=[validators.InputRequired()])
+
+
+class RegistrationForm(LoginForm):
+    LoginForm.username
+    LoginForm.password
+    email = StringField('email', validators=[validators.Email()])
 
 class Tweet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,6 +65,7 @@ class Tweet(db.Model):
         else:
             pass
 
+
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rating = db.Column(db.Integer, nullable=False)
@@ -70,19 +73,20 @@ class Rating(db.Model):
     tweet_id = db.Column(db.Integer, db.ForeignKey('tweet.id'))
     parent = relationship("Tweet", back_populates="ratings")
 
+
 class TweetForm(FlaskForm):
     adderallLevel = RadioField('Sanity Level', choices=[('1','Relatively Normal'),('3',"Cola'd-up"), ('5','MAGAnificent'), ('7','Sleep Deprived'), ('99','Complete Lunacy')], default='5')
-    #adderallLevel = IntegerField('Sleep deprivation level', validators=[validators.Optional()])
     prompt = StringField('Prompt (optional)', validators=[validators.Optional()])
+
 
 def createTweet(prompt=None, adderallLevel=None):
     tweet = Tweet()
     tweet.dateTime = str(datetime.datetime.now().strftime('%H:%M:%S %d.%m.%Y'))
+    #Pytorch only accepts temperature values in a float format (usually a number between 0.1 and 0,9).
     tweet.adderallLevel = int(adderallLevel)/10
     tweet.prompt = prompt
 
     if prompt and adderallLevel:
-        #Transformers only accepts temperature values in a float format (usually in the range 0.1-0,9).
         tweet.text = nlp.generateTweet(ai, prompt=prompt, temperature=tweet.adderallLevel)
     elif prompt:
         tweet.text = nlp.generateTweet(ai, prompt=prompt)
@@ -90,20 +94,16 @@ def createTweet(prompt=None, adderallLevel=None):
         tweet.text = nlp.generateTweet(ai, temperature=tweet.adderallLevel)
     else:
         tweet.text = nlp.generateTweet(ai)
-    print(tweet.adderallLevel)
-    print(tweet.prompt)
-   # print('Created: ' + str(tweet.adderallLevel) + tweet.prompt)
     return tweet
-        
 
 
-##??????????
 def currentUser():
 	try:
 		uid = int(session["uid"])
 	except:
 		return None
 	return User.query.get(uid)
+
 
 def loginRequired():
     if not currentUser():
@@ -115,13 +115,14 @@ app.jinja_env.globals['currentUser'] = currentUser
 def init_db():
     db.create_all()
     user = User(username='admin', email='admin@example.com')
-    user.setPassword('admin')
+    user.setPassword('magacola2020')
     db.session.add(user)
     db.session.commit()
 
+
 @app.route('/register', methods=['POST', 'GET'])
 def register():
-    form = UserForm()
+    form = RegistrationForm()
 
     if form.validate_on_submit():
         username = form.username.data
@@ -135,7 +136,7 @@ def register():
         elif User.query.filter_by(email=email).first():
             flash('email is already registered for a user.')
             return redirect('/register')
-
+        #TODO: Error checks and flashes for inputs
         else:
             user = User(username=username, email=email)
             user.setPassword(password)
@@ -145,12 +146,11 @@ def register():
             return redirect('/login')
     return render_template("register.html", form=form, title='Register')
 
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    form = UserForm() 
-    #TODO
-    ##form.email.flags=Flags.hidden
-    # When a user presses the submit button in a form, validate_on_submit method will return True.
+    form = LoginForm() 
+
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
@@ -159,13 +159,10 @@ def login():
         if not user:
                 flash('Login failed')
                 #TODO
-                print('Login failed')
                 return redirect('/login')
 
         if not user.checkPassword(password):
                 flash('Login failed. SAD!')
-                #TODO
-                print('Password failed')
                 return redirect('/login')
         session["uid"]=user.id
         flash('Login successfull')
@@ -181,15 +178,15 @@ def logoutView():
 
 @app.route('/', methods=['POST', 'GET'])
 def mainPage():
-    # An alternative to loginRequired(). Used for redirection to login page. 
-    '''if not currentUser():
-        print('forbidden')
-        return redirect('/login')'''
+
+    if not currentUser():
+        return redirect('/login')
 
     for tweet in Tweet.query.all():
         tweet.updateTotalRating()
 
     tweets = Tweet.query.all()
+    ratings = Rating.query.all()
 
     tweet = Tweet()
     form = TweetForm()
@@ -198,21 +195,13 @@ def mainPage():
             tweet = createTweet(form.prompt.data, form.adderallLevel.data)
         else:
             tweet = createTweet()
-        print('FORM: ' + form.prompt.data + str(form.adderallLevel.data))
-
-        '''
-        ratings = Rating.query.all()
-        for rating in ratings:
-            print('Rating: ' + str(rating.rating))
-            print('User: ' + rating.user)
-            print('Tweet ID: ' + str(rating.tweet_id))
-        '''
 
         db.session.add(tweet)
         db.session.commit()
         return redirect('/')
 
-    return render_template("mainPage.html", tweets=tweets, title='The Greatest Main Page', form=form)
+    return render_template("mainPage.html", tweets=tweets, ratings=ratings, title='The Greatest Main Page', form=form)
+
 
 @app.route('/upvote/<int:tweetId>', methods=['GET', 'POST'])
 def upvote(tweetId):
@@ -231,6 +220,7 @@ def upvote(tweetId):
     else:
         abort(403)
 
+
 @app.route('/downvote/<int:tweetId>', methods=['GET', 'POST'])
 def downvote(tweetId):
     loginRequired()
@@ -247,6 +237,19 @@ def downvote(tweetId):
         return redirect('/')
     else:
         abort(403)
+
+
+@app.route('/delete/<int:tweetId>')
+def deleteTweet(tweetId):
+    loginRequired()
+    username = currentUser().username
+    if username != 'admin':
+        abort(403)
+    tweet = Tweet.query.get_or_404(tweetId)
+    db.session.delete(tweet)
+    db.session.commit()
+    return redirect('/')
+
 
 @app.errorhandler(404)
 def page_not_found(e):
